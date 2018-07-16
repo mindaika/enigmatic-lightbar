@@ -4,13 +4,14 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def hello_world():
-    return 'Hello World!'
+def index():
+    return 'Not the droids you\'re looking for'
 
 
 if __name__ == '__main__':
     app.run()
 
+# Dummy data
 contacts = [
     {
         'id': 1,
@@ -47,11 +48,13 @@ contacts = [
 ]
 
 
+# GET: Returns all contacts
 @app.route('/manager/api/v1.0/contacts', methods=['GET'])
 def get_contacts():
     return jsonify({'contacts': contacts})
 
 
+# GET: Returns specific contact
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['GET'])
 def get_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
@@ -60,6 +63,7 @@ def get_contact(contact_id):
     return jsonify({'contact': contact[0]})
 
 
+# POST: Creating a new contact only requires name
 @app.route('/manager/api/v1.0/contacts', methods=['POST'])
 def create_contact():
     if not request.json or 'name' not in request.json:
@@ -75,9 +79,23 @@ def create_contact():
     return jsonify({'contact': contact}), 201
 
 
+@app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['DELETE'])
+def delete_contact(contact_id):
+    contact = [contact for contact in contacts if contact['id'] == contact_id]
+    if len(contact) == 0:
+        abort(404)
+    contacts.remove(contact[0])
+    return jsonify({'result': True})
+
+
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    return make_response(jsonify({'error': 'Bad request'}), 400)
 
 
 
