@@ -79,6 +79,7 @@ def create_contact():
     return jsonify({'contact': contact}), 201
 
 
+# DELETE: Just go ham on deletion
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['DELETE'])
 def delete_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
@@ -86,6 +87,21 @@ def delete_contact(contact_id):
         abort(404)
     contacts.remove(contact[0])
     return jsonify({'result': True})
+
+
+# PUT: Don't go ham on updates
+@app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['PUT'])
+def update_contact(contact_id):
+    contact = [contact for contact in contacts if contact['id'] == contact_id]
+    if len(contact) == 0:
+        abort(404)
+    if not request.json:
+        abort(400)
+    contact[0]['name'] = request.json.get('name', contact[0]['name'])
+    contact[0]['phones'] = request.json.get('phones', contact[0]['phones'])
+    contact[0]['addresses'] = request.json.get('addresses', contact[0]['addresses'])
+    contact[0]['emails'] = request.json.get('emails', contact[0]['emails'])
+    return jsonify({'contact': contact[0]})
 
 
 @app.errorhandler(404)
