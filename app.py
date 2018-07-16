@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, abort, make_response
+from flask import Flask, jsonify, abort, make_response, request
 
 app = Flask(__name__)
 
@@ -57,9 +57,27 @@ def get_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
     if len(contact) == 0:
         abort(404)
-    return jsonify({'contact' : contact[0]})
+    return jsonify({'contact': contact[0]})
+
+
+@app.route('/manager/api/v1.0/contacts', methods=['POST'])
+def create_contact():
+    if not request.json or 'name' not in request.json:
+        abort(400)
+    contact = {
+        'id': contacts[-1]['id'] + 1,
+        'name': request.json['name'],
+        'phones': request.json.get('phones', ""),
+        'addresses': request.json.get('addresses', ""),
+        'emails': request.json.get('emails', "")
+    }
+    contacts.append(contact)
+    return jsonify({'contact': contact}), 201
 
 
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+
