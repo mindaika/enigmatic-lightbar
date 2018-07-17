@@ -9,7 +9,8 @@ if __name__ == '__main__':
 
 
 # NOTE: This is not the ideal method to handle auth. Passwords should be salted and hashed, and obviously not stored
-# in plaintext in an app. However, this works to demonstrate the requirement of authentication
+# in plaintext in an app. However, this should demonstrate the requirement of authentication. I hardcoded this login
+# here (instead of in a separate file) as the requirements specify not to read from the filesystem
 @auth.get_password
 def get_password(username):
     if username == 'Randall':
@@ -26,7 +27,7 @@ def unauthorized():
 contacts = [
     {
         'id': 1,
-        'name': 'Ronald Snorlax',
+        'name': 'Ronald',
         'phones': [
             {'type': 'work', 'number': '+1(212)867-5309'},
             {'type': 'home', 'number': '1-900-MIX-A-LOT'}
@@ -55,6 +56,22 @@ contacts = [
             {'type': 'home', 'email': 'egrace@geocities.com'},
             {'type': 'work', 'email': 'darkener@prodigy.net'}
         ]
+    },
+    {
+        'id': 3,
+        'name': 'Mary Jane Emily',
+        'phones': [
+            {'type': 'work', 'number': '800-555-1212'},
+            {'type': 'home', 'number': '281-330-8004'}
+        ],
+        'addresses': [
+            {'type': 'home', 'address': 'Paris, Germany'},
+            {'type': 'work', 'address': 'Brussels, Scotland'}
+        ],
+        'emails': [
+            {'type': 'home', 'email': 'otherem@ua.fr'},
+            {'type': 'work', 'email': 'firstem@faceplace.com'}
+        ]
     }
 ]
 
@@ -65,9 +82,14 @@ def index():
 
 
 # GET: Returns all contacts
+# Now with name search!
 @app.route('/manager/api/v1.0/contacts', methods=['GET'])
 def get_contacts():
-    return jsonify({'contacts': [make_public_contact(contact) for contact in contacts]})
+    if len(request.query_string) == 0:
+        return jsonify({'contacts': [make_public_contact(contact) for contact in contacts]})
+    else:
+        return jsonify({'contacts': [make_public_contact(contact) for contact in contacts
+                                     if request.args.get('name') in contact['name']]})
 
 
 # GET: Returns specific contact
@@ -108,7 +130,6 @@ def delete_contact(contact_id):
 
 
 # PUT: Don't go ham on updates
-# TODO: "Store a ref to the authenticated user in the modified record"
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['PUT'])
 @auth.login_required
 def update_contact(contact_id):
@@ -145,6 +166,5 @@ def not_found(error):
 @app.errorhandler(400)
 def bad_request(error):
     return make_response(jsonify({'error': 'Bad request'}), 400)
-
 
 
