@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, abort, make_response, request
+from flask import Flask, jsonify, abort, make_response, request, url_for
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ contacts = [
 # GET: Returns all contacts
 @app.route('/manager/api/v1.0/contacts', methods=['GET'])
 def get_contacts():
-    return jsonify({'contacts': contacts})
+    return jsonify({'contacts': [make_public_contact(contact) for contact in contacts]})
 
 
 # GET: Returns specific contact
@@ -90,6 +90,7 @@ def delete_contact(contact_id):
 
 
 # PUT: Don't go ham on updates
+# TODO: "Store a ref to the authenticated user in the modified record"
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['PUT'])
 def update_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
@@ -102,6 +103,17 @@ def update_contact(contact_id):
     contact[0]['addresses'] = request.json.get('addresses', contact[0]['addresses'])
     contact[0]['emails'] = request.json.get('emails', contact[0]['emails'])
     return jsonify({'contact': contact[0]})
+
+
+# Returns contacts with a URI instead of a contactID
+def make_public_contact(contact):
+    new_contact = {}
+    for field in contact:
+        if field == 'id':
+            new_contact['uri'] = url_for('get_contact', contact_id=contact['id'], _external=True)
+        else:
+            new_contact[field] = contact[field]
+    return new_contact
 
 
 @app.errorhandler(404)
