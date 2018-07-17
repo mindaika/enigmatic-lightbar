@@ -1,15 +1,26 @@
 from flask import Flask, jsonify, abort, make_response, request, url_for
+from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
-
-
-@app.route('/')
-def index():
-    return 'Not the droids you\'re looking for'
-
+auth = HTTPBasicAuth()
 
 if __name__ == '__main__':
     app.run()
+
+
+# NOTE: This is not the ideal method to handle auth. Passwords should be salted and hashed, and obviously not stored
+# in plaintext in an app. However, this works to demonstrate the requirement of authentication
+@auth.get_password
+def get_password(username):
+    if username == 'Randall':
+        return 'potatosack'
+    return None
+
+
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
+
 
 # Dummy data
 contacts = [
@@ -48,6 +59,11 @@ contacts = [
 ]
 
 
+@app.route('/')
+def index():
+    return 'Not the droids you\'re looking for'
+
+
 # GET: Returns all contacts
 @app.route('/manager/api/v1.0/contacts', methods=['GET'])
 def get_contacts():
@@ -65,6 +81,7 @@ def get_contact(contact_id):
 
 # POST: Creating a new contact only requires name
 @app.route('/manager/api/v1.0/contacts', methods=['POST'])
+@auth.login_required
 def create_contact():
     if not request.json or 'name' not in request.json:
         abort(400)
@@ -81,6 +98,7 @@ def create_contact():
 
 # DELETE: Just go ham on deletion
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['DELETE'])
+@auth.login_required
 def delete_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
     if len(contact) == 0:
@@ -92,6 +110,7 @@ def delete_contact(contact_id):
 # PUT: Don't go ham on updates
 # TODO: "Store a ref to the authenticated user in the modified record"
 @app.route('/manager/api/v1.0/contacts/<int:contact_id>', methods=['PUT'])
+@auth.login_required
 def update_contact(contact_id):
     contact = [contact for contact in contacts if contact['id'] == contact_id]
     if len(contact) == 0:
@@ -102,6 +121,7 @@ def update_contact(contact_id):
     contact[0]['phones'] = request.json.get('phones', contact[0]['phones'])
     contact[0]['addresses'] = request.json.get('addresses', contact[0]['addresses'])
     contact[0]['emails'] = request.json.get('emails', contact[0]['emails'])
+    contact[0]['modified_by'] = auth.username()
     return jsonify({'contact': contact[0]})
 
 
@@ -116,6 +136,7 @@ def make_public_contact(contact):
     return new_contact
 
 
+# These are provided so that error responses return JSON as expected
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
