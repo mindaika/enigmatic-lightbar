@@ -52,5 +52,5 @@ Currently blank
 
 
 ## Notes
-All data is stored in memory. The username:pw is store in app.py to fulfill a requirement
+All data is stored in memory. The username:pw is stored in app.py to fulfill a requirement
 that data not be read from the filesystem. 
