@@ -112,7 +112,8 @@ def create_contact():
         'name': request.json['name'],
         'phones': request.json.get('phones', ""),
         'addresses': request.json.get('addresses', ""),
-        'emails': request.json.get('emails', "")
+        'emails': request.json.get('emails', ""),
+        'modified_by': auth.username()
     }
     contacts.append(contact)
     return jsonify({'contact': contact}), 201
